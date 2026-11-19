@@ -1,3 +1,6 @@
+import truststore
+
+truststore.inject_into_ssl()
 
 import argparse
 import os
@@ -102,15 +105,39 @@ class Spacelift:
             ):
                 print(field)
 
+    def stack_input_schema(self):
+        query = """
+        query {
+        __type(name: "StackInput") {
+            inputFields {
+            name
+            type {
+                kind
+                name
+                ofType {
+                kind
+                name
+                }
+            }
+            }
+        }
+        }
+        """
+
+        data = self.graphql(query)
+
+        for field in data["__type"]["inputFields"]:
+            print(field)
+
     def create_stack(self, index):
         name = f"{PREFIX}{index:03d}"
 
         query = """
-        mutation ($input: StackInput!) {
-          stackCreate(input: $input) {
+        mutation ($input: StackInput!, $manageState: Boolean!) {
+        stackCreate(input: $input, manageState: $manageState) {
             id
             name
-          }
+        }
         }
         """
 
@@ -123,12 +150,18 @@ class Spacelift:
             "projectRoot": "workload",
             "space": os.getenv("SPACELIFT_SPACE_ID", "root"),
             "workerPool": os.environ["SPACELIFT_WORKER_POOL_ID"],
+            "vcsIntegrationId": os.environ["SPACELIFT_VCS_INTEGRATION_ID"],
             "autodeploy": False,
+            "beforePlan": ["sleep 120"],
             "labels": ["keda-load-test"],
         }
 
         return self.graphql(
-            query, {"input": stack_input}
+            query,
+            {
+                "input": stack_input,
+                "manageState": True,
+            },
         )["stackCreate"]
 
     def trigger(self, stack_id):
@@ -148,13 +181,17 @@ class Spacelift:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "command", choices=["schema", "list", "create", "trigger"]
+        "command",
+        choices=["schema", "stack-input", "list", "create", "trigger"]
     )
     parser.add_argument("--count", type=int, default=10)
     parser.add_argument("--concurrency", type=int, default=5)
     args = parser.parse_args()
 
     api = Spacelift()
+    if args.command == "stack-input":
+        api.stack_input_schema()
+        return
 
     if args.command == "schema":
         api.schema()
