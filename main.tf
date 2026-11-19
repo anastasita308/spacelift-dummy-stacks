@@ -36,6 +36,11 @@ resource "spacelift_stack" "autoscaling_test" {
 
   worker_pool_id = var.worker_pool_id
 
+  github_enterprise {
+    id = "spacelift-anastasiia"
+    namespace = "anastasita308"
+  }
+
   autodeploy = false
 
   labels = ["autoscaling-test"]
