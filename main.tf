@@ -21,6 +21,10 @@ variable "worker_pool_id" {
   type = string
 }
 
+variable "vcs_integration_id" {
+  type = string
+}
+
 resource "spacelift_stack" "autoscaling_test" {
   for_each = toset([
     for i in range(var.stack_count) :
@@ -35,6 +39,7 @@ resource "spacelift_stack" "autoscaling_test" {
   project_root = "workload"
 
   worker_pool_id = var.worker_pool_id
+  vcs_integration_id = var.vcs_integration_id
 
   autodeploy = false
 
