@@ -21,6 +21,10 @@ variable "worker_pool_id" {
   type = string
 }
 
+variable "github_enterprise_id" {
+  type = string
+}
+
 resource "spacelift_stack" "autoscaling_test" {
   for_each = toset([
     for i in range(var.stack_count) :
@@ -37,7 +41,7 @@ resource "spacelift_stack" "autoscaling_test" {
   worker_pool_id = var.worker_pool_id
 
   github_enterprise {
-    id = "spacelift-anastasiia"
+    id        = var.github_enterprise_id
     namespace = "anastasita308"
   }
 
